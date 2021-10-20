@@ -17,5 +17,5 @@ Route::get('/list/view/{id}', [ListsController::class, 'show'])->name('list.view
 Route::get('/list/delete/{id}', [ListsController::class, 'destroy'])->name('list.delete');
 Route::get('/list/{id?}/item/create', [ItemsController::class, 'create'])->name('item.create');
 Route::post('/items/store', [ItemsController::class, 'store'])->name('items.store');
-Route::get('/item/mark_as_read/{itemId?}', [ItemsController::class, 'markAsRead'])->name('item.mark_as_read');
+Route::get('/item/mark_completed/{itemId?}', [ItemsController::class, 'markCompleted'])->name('item.mark_completed');
 Route::get('/item/delete/{itemId?}', [ItemsController::class, 'destroy'])->name('item.delete');

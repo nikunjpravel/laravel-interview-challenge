@@ -19,7 +19,7 @@
 						{{ session('success') }}
 					</div>
 					@endif
-					@if(sizeof($items) > 0)
+					@if(count($items) > 0)
 					<table class="table">
 						<thead>
 							<tr>
@@ -33,16 +33,16 @@
 							<tr>
 								<th scope="row">{{ $loop->iteration }}</th>
 								<td>
-									@if ($item->is_completed == 1)
+									@if ($item->is_completed)
 										<del>{{ $item->desc ?? '-' }}</del>
 									@else
 										<p>{{ $item->desc ?? '-' }}</p>
 									@endif
 								</td>
 								<td>
-									@if ($item->is_completed == 0)
-										<a href="{{ route('item.mark_as_read', ['itemId' => $item->id]) }}" class="text-success mx-1">
-											Mark As Read
+									@unless ($item->is_completed)
+										<a href="{{ route('item.mark_completed', ['itemId' => $item->id]) }}" class="text-success mx-1">
+											Mark Completed
 										</a>
 									@endif
 									<a href="{{ route('item.delete', ['itemId' => $item->id]) }}" class="text-danger mx-1">
