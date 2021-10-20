@@ -18,7 +18,7 @@
                         {{ session('success') }}
                     </div>
                     @endif
-                    @if(sizeof($lists) > 0)
+                    @if(count($lists) > 0)
                     <table class="table">
                         <thead>
                             <tr>
