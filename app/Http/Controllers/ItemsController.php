@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\ItemsStoreRequest;
-use App\Models\Lists;
 use App\Models\Items;
-use DB, Auth;
 
 class ItemsController extends Controller
 {
-    public function create($id)
+    public function create(int $id)
     {
         return view('items.create', compact('id'));
     }
@@ -19,44 +16,54 @@ class ItemsController extends Controller
     {
         try {
             $validated = $request->validated();
-            $message = '';
-            if(!is_null($validated)){
+
+            if ($validated) {
                 Items::updateOrCreate(
                 ['id' => $request->id],
                 [
                     'desc' => $request->desc,
                     'list_id' => $request->list_id
                 ]);
+            } else {
+                return redirect('home')->withErrors($request->messages());
             }
-    
-            $message = 'Item added successfully';
-            
+
+            $message = 'Item added.';
             if ($request->id) {
-                $message = 'Item updated successfully';
+                $message = 'Item updated.';
             }
 
             return redirect()->route('list.view', ['id' => $request->list_id])->withSuccess($message);
-            
         } catch (\Exception $e) {
-            
-            return $e->getMessage();
+            return redirect('home')->withErrors($e->getMessage());
         }
     }
 
-    public function markAsRead($itemId)
+    public function markCompleted(int $itemId)
     {
-        Items::where('id', $itemId)->update([
-            'is_completed' => config('constants.item_is_complete_status.yes')
-        ]);
+        /** @var Items $item */
+        $item = Items::findItemByAuthenticatedUser($itemId)->first();
 
-        return redirect()->back()->withSuccess('Item mark as read successfully');
+        if (! $item) {
+            return redirect()->back()->withErrors('Item not found.');
+        }
+
+        $item->is_completed = true;
+        $item->save();
+
+        return redirect()->back()->withSuccess('Item completed.');
     }
 
     public function destroy($itemId)
     {
-        $item = Items::find($itemId);
+        $item = Items::findItemByAuthenticatedUser($itemId)->first();
+
+        if (! $item) {
+            return redirect()->back()->withErrors('Item not found.');
+        }
+
         $item->delete();
 
-        return redirect()->back()->withSuccess('Item deleted successfully');
+        return redirect()->back()->withSuccess('Item deleted.');
     }
 }

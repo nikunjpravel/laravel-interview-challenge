@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\ListsStoreRequest;
 use App\Models\Lists;
-use App\Models\Items;
-use DB, Auth;
+use Illuminate\Contracts\Support\Renderable;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 class ListsController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\Support\Renderable
      */
-    public function index()
+    public function index(): Renderable
     {
         return view('lists.create');
     }
@@ -23,72 +23,59 @@ class ListsController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param \App\Http\Requests\ListsStoreRequest $request
+     *
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Http\RedirectResponse|\Illuminate\Http\Response|\Illuminate\Routing\Redirector
      */
     public function store(ListsStoreRequest $request)
     {
         try {
-        // Will return only validated data
-        $validated = $request->validated();
-        $message = '';
-        if(!is_null($validated)){
-            Lists::updateOrCreate(
-            ['id' => $request->id],
-            [
-                'list_name' => $request->list_name,
-                'created_by' => Auth::id()
-            ]);
-        }
+            // Will return only validated data
+            $validated = $request->validated();
 
-        $message = 'List name added successfully';
-        if ($request->id) {
-            $message = 'List name updated successfully';
-        }
+            if ($validated) {
+                Lists::updateOrCreate(
+                ['id' => $request->id],
+                [
+                    'list_name' => $request->list_name,
+                    'created_by' => Auth::id()
+                ]);
+            } else {
+                return redirect('home')->withErrors($request->messages());
+            }
 
-        return redirect('home')->withSuccess($message);
+            $message = 'List name added.';
+            if ($request->id) {
+                $message = 'List name updated.';
+            }
 
+            return redirect('home')->withSuccess($message);
         } catch (\Exception $e) {
-            //throw $th;
-            return $e->getMessage();
+            return redirect('home')->withErrors($e->getMessage());
         }
-        
     }
 
     /**
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     *
+     * @return \Illuminate\Contracts\Support\Renderable
      */
-    public function show($id)
+    public function show(int $id): Renderable
     {
-        $items = Items::where('list_id', $id)->get();
-        
+        $list = Lists::query()
+            ->with('items')
+            ->findItemByAuthenticatedUser($id)
+            ->first();
+
+        if (! $list) {
+            return redirect()->back()->withErrors('List not found.');
+        }
+
+        $items = $list->items ?? [];
+
         return view('items.index', compact('items', 'id'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
     }
 
     /**
@@ -97,11 +84,16 @@ class ListsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(int $id): Response
     {
-        $list = Lists::find($id);
+        $list = Lists::findItemByAuthenticatedUser($id)->first();
+
+        if (! $list) {
+            return redirect()->back()->withErrors('List not found.');
+        }
+
         $list->delete();
 
-        return redirect()->back()->withSuccess('List deleted successfully');
+        return redirect()->back()->withSuccess('List deleted.');
     }
 }

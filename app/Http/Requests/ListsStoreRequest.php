@@ -4,6 +4,10 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * @property string $list_name
+ * @property int    $id
+ */
 class ListsStoreRequest extends FormRequest
 {
     /**
